@@ -1,0 +1,34 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   styles/index.css  —  Single CSS Entry Point
+   Import order: tokens → base → components → pages
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 1. Base Styles & Variables */
+@import "./variables.css";
+@import "./reset.css";
+@import "./typography.css";
+
+/* 2. Global Utilities & Animations */
+@import "./global/animations.css";
+
+/* 3. Component & Feature Styles */
+@import "../../components/BOQ/ui/buttons.css";
+
+/* ── Global Container ────────────────────────────────────────────────────── */
+.container {
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  padding: 0 var(--container-padding);
+}
+
+@media (max-width: 1024px) {
+  .container {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 1rem;
+  }
+}
