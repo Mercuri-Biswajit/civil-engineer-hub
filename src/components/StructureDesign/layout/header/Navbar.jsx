@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { ROUTES } from "@/utils/StructureDesign/routes/index.js";
 
 const CATEGORIES = [
@@ -10,71 +10,81 @@ const CATEGORIES = [
 
 export default function Navbar() {
   return (
-    <aside className="w-full lg:w-52 lg:min-w-[208px] lg:max-w-[220px] lg:sticky lg:top-4 flex flex-col gap-3 no-print z-30 shrink-0">
-      <div className="bg-white border border-slate-100 rounded-lg p-4 shadow-sm relative overflow-hidden">
+    <aside className="w-full lg:w-56 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto flex flex-col gap-4 no-print z-30 shrink-0">
+      <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
+        <div className="flex items-center gap-2.5 mb-3 px-2">
+          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-md">
+            <span className="text-sm">🏗️</span>
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-slate-900 leading-none">
+              Structure
+            </h2>
+            <p className="text-[8px] font-semibold text-indigo-600 uppercase tracking-wider mt-0.5">
+              IS & IRC Codes
+            </p>
+          </div>
+        </div>
 
-         <div className="flex items-center gap-3 mb-4 px-1">
-            <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-100">
-              <span className="text-base">🏗️</span>
-            </div>
-            <div>
-               <h2 className="text-sm font-extrabold text-slate-900 leading-none tracking-tight">Structure</h2>
-               <p className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.15em] mt-1">IS & IRC Codes</p>
-            </div>
-         </div>
-
-         <nav className="flex flex-col gap-0.5">
-            {CATEGORIES.map((cat) => (
-              <div key={cat.label} className="flex flex-col">
-                <div className="flex items-center gap-2 px-2 mt-3 mb-1">
-                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em]">{cat.label}</span>
-                   <div className="h-[1px] flex-1 bg-slate-100" />
-                </div>
-                
-                {ROUTES.filter((r) => cat.ids.includes(r.id)).map((route) => {
-                  const Icon = route.icon;
-                  return (
-                    <NavLink
-                      key={route.id}
-                      to={`/structure/${route.path}`}
-                      className={({ isActive }) =>
-                        `flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all text-left group relative ${
-                          isActive 
-                            ? "bg-indigo-50 border border-indigo-100 shadow-sm" 
-                            : "border border-transparent hover:bg-indigo-50/30"
-                        }`
-                      }
-                    >
-                      {({ isActive }) => (
-                        <>
-                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-                            isActive 
-                              ? "bg-indigo-600 text-white shadow-md shadow-indigo-100" 
-                              : "bg-slate-50 text-slate-400 border border-slate-100"
-                          }`}>
-                            {Icon && <Icon size={14} strokeWidth={isActive ? 2.5 : 2} />}
-                          </div>
-                          <div className={`text-[10px] flex-1 font-bold uppercase tracking-wider transition-colors ${
-                            isActive ? "text-slate-800" : "text-slate-400 group-hover:text-slate-600"
-                          }`}>
-                            {route.label}
-                          </div>
-                          {isActive && (
-                            <div className="w-1 h-1 rounded-full bg-indigo-600 animate-pulse" />
-                          )}
-                        </>
-                      )}
-                    </NavLink>
-                  );
-                })}
+        <nav className="flex flex-col gap-1">
+          {CATEGORIES.map((cat) => (
+            <div key={cat.label} className="flex flex-col">
+              <div className="flex items-center gap-2 px-2 mt-2 mb-1">
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                  {cat.label}
+                </span>
+                <div className="h-px flex-1 bg-slate-100" />
               </div>
-            ))}
-         </nav>
+
+              {ROUTES.filter((r) => cat.ids.includes(r.id)).map((route) => {
+                const Icon = route.icon;
+                return (
+                  <NavLink
+                    key={route.id}
+                    to={`/structure/${route.path}`}
+                    className={({ isActive }) =>
+                      `flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all text-left group ${
+                        isActive
+                          ? "bg-indigo-50 text-indigo-700"
+                          : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+                      }`
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <div
+                          className={`w-6 h-6 rounded-md flex items-center justify-center transition-all ${
+                            isActive
+                              ? "bg-indigo-600 text-white"
+                              : "bg-slate-100 text-slate-400"
+                          }`}
+                        >
+                          {Icon && <Icon size={12} />}
+                        </div>
+                        <span
+                          className={`text-[10px] font-semibold uppercase tracking-wide ${
+                            isActive ? "text-slate-800" : "text-slate-500"
+                          }`}
+                        >
+                          {route.label}
+                        </span>
+                      </>
+                    )}
+                  </NavLink>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
       </div>
-      
-      <div className="bg-white border border-slate-100 rounded-lg px-3 py-2 flex gap-2 justify-center items-center">
-        <span className="px-2 py-0.5 rounded text-[9px] font-bold tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-100">IS 456</span>
-        <span className="px-2 py-0.5 rounded text-[9px] font-bold tracking-wider bg-amber-50 text-amber-600 border border-amber-100">IRC 112</span>
+
+      <div className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 flex gap-1.5 justify-center">
+        <span className="px-1.5 py-0.5 rounded text-[8px] font-bold tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-100">
+          IS 456
+        </span>
+        <span className="px-1.5 py-0.5 rounded text-[8px] font-bold tracking-wider bg-amber-50 text-amber-600 border border-amber-100">
+          IRC 112
+        </span>
       </div>
     </aside>
   );

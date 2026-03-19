@@ -1,5 +1,7 @@
 # Civil-Engineer-Hub Frontend
 
+> **Note:** This version of Civil-Engineer-Hub is a standalone public application without user authentication. All features are accessible without login. This is suitable for demos, educational use, or self-hosted deployments where authentication is not required.
+
 Welcome to the Civil-Engineer-Hub frontend! This project is a specialized suite for structural engineers, providing tools for Beam, Column, Slab, Foundation, Road, and Bridge design, along with BBS (Bar Bending Schedule) and BOQ (Bill of Quantities) calculators.
 
 ## 🎨 Design System

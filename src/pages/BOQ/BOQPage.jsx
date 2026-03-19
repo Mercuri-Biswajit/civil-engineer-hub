@@ -1,35 +1,35 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import ToolLayout from "@/components/layout/ToolLayout.jsx";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiChevronRight, FiChevronLeft, FiCheck, FiInfo, FiAlertTriangle, FiDownload, FiRefreshCw, FiExternalLink, FiBox, FiLayers, FiList, FiAlertCircle } from "react-icons/fi";
-import { SaveToast } from "@/components/StructureDesign/SavePanel.jsx";
+import {
+  FiChevronRight,
+  FiChevronLeft,
+  FiInfo,
+  FiRefreshCw,
+  FiExternalLink,
+  FiAlertTriangle,
+} from "react-icons/fi";
+
+// Import extracted components
+import StepIndicator, { STEPS } from "@/components/BOQ/Steps.jsx";
+import FormGroup, {
+  PageHeader,
+  NavBar,
+  Banner,
+  ResultSection,
+} from "@/components/BOQ/FormGroups.jsx";
+import { ROOM_TYPES } from "@/components/BOQ/RoomSelector.jsx";
+import FloorManager, {
+  FLOOR_NAMES,
+  initializeFloorRooms,
+} from "@/components/BOQ/FloorManager.jsx";
+import RoomSelector from "@/components/BOQ/RoomSelector.jsx";
+import CostSummary from "@/components/BOQ/CostSummary.jsx";
 
 // ─────────────────────────────────────────────────────────────────────────
 // CONSTANTS
 // ─────────────────────────────────────────────────────────────────────────
-const ROOM_TYPES = [
-  { id: "master-bedroom", icon: "🛏️", name: "Master Bedroom" },
-  { id: "bedroom", icon: "🛏️", name: "Bedroom" },
-  { id: "hall", icon: "🛋️", name: "Hall / Drawing Room" },
-  { id: "dining", icon: "🍽️", name: "Dining Room" },
-  { id: "kitchen", icon: "🍳", name: "Kitchen" },
-  { id: "toilet", icon: "🚿", name: "Toilet / Bathroom" },
-  { id: "balcony", icon: "🏞️", name: "Balcony / Verandah" },
-  { id: "store", icon: "📦", name: "Store / Utility" },
-  { id: "garage", icon: "🚗", name: "Garage / Parking" },
-  { id: "office", icon: "💼", name: "Office Room" },
-  { id: "pooja", icon: "🪔", name: "Pooja Room" },
-  { id: "servant", icon: "🛏️", name: "Servant Quarter" },
-];
-
-const FLOOR_NAMES = [
-  "Ground Floor (G)",
-  "1st Floor",
-  "2nd Floor",
-  "3rd Floor",
-  "4th Floor",
-];
 
 const BRICK_RATES = {
   "1st": [6200, 5800],
@@ -43,126 +43,8 @@ const BRICK_LABELS = {
   aac: "AAC Block",
 };
 
-const STEPS = [
-  { num: 1, label: "Project Brief" },
-  { num: 2, label: "Geometry & Extent" },
-  { num: 3, label: "Floor Architecture" },
-  { num: 4, label: "Structural Profile" },
-  { num: 5, label: "Official Estimate" },
-];
-
 function scrollTop() {
   window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-// ─────────────────────────────────────────────────────────────────────────
-// UI COMPONENTS
-// ─────────────────────────────────────────────────────────────────────────
-
-function FormGroup({ label, hint, error, children }) {
-  return (
-    <div className="flex flex-col gap-1.5 mb-4 group">
-      <div className="flex items-center justify-between px-0.5">
-        <label className="text-[11px] font-semibold text-slate-500 group-focus-within:text-indigo-600 transition-colors uppercase tracking-wide">
-          {label}
-        </label>
-        {hint && !error && (
-          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{hint}</span>
-        )}
-      </div>
-      {children}
-      {error && (
-        <span className="text-[10px] text-rose-500 font-bold px-1 flex items-center gap-1 mt-1 animate-in fade-in slide-in-from-top-1">
-          <FiAlertTriangle size={12} /> {error}
-        </span>
-      )}
-    </div>
-  );
-}
-
-function PageHeader({ step, title, desc }) {
-  return (
-    <div className="mb-6 relative">
-       <div className="absolute -left-6 top-0 w-1.5 h-full bg-gradient-to-b from-indigo-600 to-transparent rounded-full opacity-50 blur-[1px]" />
-       <div className="flex items-center gap-3 mb-2">
-         <div className="px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">
-           STEP {step} / {STEPS.length.toString().padStart(2, '0')}
-         </div>
-       </div>
-       <h2 className="text-xl font-extrabold text-slate-900 tracking-tight mb-2">
-         {title}
-       </h2>
-       <p className="text-sm text-slate-500 font-medium leading-relaxed max-w-2xl">
-         {desc}
-       </p>
-    </div>
-  );
-}
-
-function NavBar({ onNext, onBack, hideBack, nextLabel = "Continue", nextCta }) {
-  return (
-    <div className="flex items-center gap-4 mt-8 pt-6 border-t border-slate-100">
-      {!hideBack && (
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-white text-slate-500 text-xs font-bold uppercase tracking-widest border border-slate-200 hover:bg-slate-50 hover:text-slate-900 transition-all active:scale-95 group"
-        >
-          <FiChevronLeft className="group-hover:-translate-x-1 transition-transform" /> Back
-        </button>
-      )}
-      <button
-        onClick={onNext}
-        className={`flex-1 flex items-center justify-center gap-3 px-8 py-3 rounded-lg text-xs font-bold uppercase tracking-widest transition-all active:scale-[0.98] group ${
-          nextCta
-            ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5"
-            : "bg-slate-900 text-white hover:bg-slate-800 shadow-md shadow-slate-200 hover:-translate-y-0.5"
-        }`}
-      >
-        {nextLabel} <FiChevronRight className="group-hover:translate-x-1 transition-transform" />
-      </button>
-    </div>
-  );
-}
-
-function Banner({ type, children }) {
-  const isErr = type === "err";
-  const isWarn = type === "warn";
-  const colorCls = isErr 
-    ? "bg-rose-500/10 border-rose-500/20 text-rose-400" 
-    : isWarn 
-      ? "bg-amber-500/10 border-amber-500/20 text-amber-400" 
-      : "bg-purple-500/10 border-purple-500/20 text-purple-400";
-  
-  return (
-    <div className={`p-6 rounded-lg border text-xs font-black uppercase tracking-tight flex items-center gap-4 mb-8 backdrop-blur-sm animate-in fade-in slide-in-from-left-2 ${colorCls}`}>
-      <div className="p-2 rounded-lg bg-white shadow-sm border border-slate-100">
-        {isErr ? <FiAlertTriangle className="w-4 h-4 text-rose-500" /> : <FiInfo className="w-4 h-4 text-indigo-500" />}
-      </div>
-      <div className="leading-relaxed">{children}</div>
-    </div>
-  );
-}
-
-function ResultSection({ icon, title, sub, badge, children }) {
-  return (
-    <div className="bg-white rounded-lg border border-slate-100 overflow-hidden mb-10 shadow-sm transition-all hover:shadow-md">
-      <div className="px-6 py-5 border-b border-slate-50 flex items-center gap-4 bg-slate-50/30">
-        <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-xl border border-indigo-100/50 text-indigo-600">
-          {icon}
-        </div>
-        <div className="flex-1">
-          <h3 className="text-xl font-black text-slate-900 tracking-tight leading-none mb-2">{title}</h3>
-          {sub && <div className="text-xs text-slate-500 font-bold uppercase tracking-wider">{sub}</div>}
-        </div>
-        {badge && (
-          <div className="px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[9px] font-black uppercase tracking-tighter">
-            {badge}
-          </div>
-        )}
-      </div>
-      <div className="p-6">{children}</div>
-    </div>
-  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -182,7 +64,6 @@ function runBOQCalculation(formData, floorRooms) {
     sfFront,
     sfBack,
     sfSide,
-    hasStair,
     staircaseType,
     stairL,
     stairW,
@@ -254,12 +135,12 @@ function runBOQCalculation(formData, floorRooms) {
     (cL * builtW * (mainBB / 1000) * (mainBD / 1000) +
       cW * builtL * (secBB / 1000) * (secBD / 1000)) *
     numFloors;
-    
+
   let stairArea = 0;
   if (staircaseType !== "none") {
-      stairArea = stairL * stairW;
+    stairArea = stairL * stairW;
   }
-  
+
   // Deduct stair area from slab
   const slabAreaPerFloor = builtArea - stairArea;
   const slabVol = Math.max(0, slabAreaPerFloor * (slabThk / 1000) * numFloors);
@@ -305,7 +186,7 @@ function runBOQCalculation(formData, floorRooms) {
   totalWindows = Math.ceil(totalWindows * 1.5);
 
   const steelKg = totalRCC * 90;
-  const floorArea = Math.max(0, totalBU - (stairArea * numFloors));
+  const floorArea = Math.max(0, totalBU - stairArea * numFloors);
   const [rateExtWall, rateIntWall] = BRICK_RATES[brickKey];
 
   const boqItems = [
@@ -506,7 +387,8 @@ function runBOQCalculation(formData, floorRooms) {
             desc: `RCC staircase M20 (waist slab type) incl. all materials, nosing tiles, handrail & finishing (${stairL}m × ${stairW}m)`,
             unit: "LS",
             qty: 1,
-            rate: (numFloors - 1) * (staircaseType === "custom" ? 65000 : 50000),
+            rate:
+              (numFloors - 1) * (staircaseType === "custom" ? 65000 : 50000),
           },
         ]
       : []),
@@ -631,10 +513,15 @@ function Page1({ data, setData, onNext }) {
     }
   };
 
-  const inputCls = (err) => `w-full bg-slate-50 border ${err ? 'border-rose-500/50 focus:ring-rose-500/10' : 'border-slate-200 focus:ring-indigo-500/10'} rounded-lg px-4 py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:bg-white focus:border-indigo-500/50 transition-all font-semibold text-sm shadow-sm`;
+  const inputCls = (err) =>
+    `w-full bg-slate-50 border ${err ? "border-rose-500/50 focus:ring-rose-500/10" : "border-slate-200 focus:ring-indigo-500/10"} rounded-lg px-4 py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:bg-white focus:border-indigo-500/50 transition-all font-semibold text-sm shadow-sm`;
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+    >
       <PageHeader
         step="01"
         title="Project Details"
@@ -699,7 +586,9 @@ function Page1({ data, setData, onNext }) {
             <select
               className={`${inputCls()} appearance-none cursor-pointer`}
               value={data.bldUse}
-              onChange={(e) => setData((p) => ({ ...p, bldUse: e.target.value }))}
+              onChange={(e) =>
+                setData((p) => ({ ...p, bldUse: e.target.value }))
+              }
             >
               <option value="Residential">Residential</option>
               <option value="Commercial">Commercial</option>
@@ -750,17 +639,26 @@ function Page2({ data, setData, onNext, onBack }) {
     }
   };
 
-  const inputCls = (err) => `w-full bg-slate-50 border ${err ? 'border-rose-500/50 focus:ring-rose-500/10' : 'border-slate-200 focus:ring-indigo-500/10'} rounded-lg px-4 py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:bg-white focus:border-indigo-500/50 transition-all font-semibold text-sm shadow-sm`;
+  const inputCls = (err) =>
+    `w-full bg-slate-50 border ${err ? "border-rose-500/50 focus:ring-rose-500/10" : "border-slate-200 focus:ring-indigo-500/10"} rounded-lg px-4 py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:bg-white focus:border-indigo-500/50 transition-all font-semibold text-sm shadow-sm`;
 
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+    >
       <PageHeader
         step="02"
         title="Plot Dimensions & Floors"
         desc="Column grid and structural layout will be calculated automatically"
       />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
-        <FormGroup label="Plot Length (m) *" error={errors.plotL} hint="Length along the road">
+        <FormGroup
+          label="Plot Length (m) *"
+          error={errors.plotL}
+          hint="Length along the road"
+        >
           <input
             type="number"
             className={inputCls(errors.plotL)}
@@ -771,7 +669,11 @@ function Page2({ data, setData, onNext, onBack }) {
             min="3"
           />
         </FormGroup>
-        <FormGroup label="Plot Width (m) *" error={errors.plotW} hint="Breadth of the plot">
+        <FormGroup
+          label="Plot Width (m) *"
+          error={errors.plotW}
+          hint="Breadth of the plot"
+        >
           <input
             type="number"
             className={inputCls(errors.plotW)}
@@ -840,29 +742,33 @@ function Page2({ data, setData, onNext, onBack }) {
           </div>
         </FormGroup>
       </div>
-      
+
       {data.staircaseType === "custom" && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
+          animate={{ opacity: 1, height: "auto" }}
           className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 p-8 bg-purple-500/[0.03] rounded-lg border border-purple-500/20 border-dashed"
         >
-           <FormGroup label="Staircase Length (m)">
+          <FormGroup label="Staircase Length (m)">
             <input
               type="number"
               className={inputCls()}
               value={data.stairL || ""}
-              onChange={(e) => setData((p) => ({ ...p, stairL: +e.target.value }))}
+              onChange={(e) =>
+                setData((p) => ({ ...p, stairL: +e.target.value }))
+              }
               placeholder="e.g. 4.9"
               step="0.1"
             />
           </FormGroup>
-           <FormGroup label="Staircase Width (m)">
+          <FormGroup label="Staircase Width (m)">
             <input
               type="number"
               className={inputCls()}
               value={data.stairW || ""}
-              onChange={(e) => setData((p) => ({ ...p, stairW: +e.target.value }))}
+              onChange={(e) =>
+                setData((p) => ({ ...p, stairW: +e.target.value }))
+              }
               placeholder="e.g. 2.4"
               step="0.1"
             />
@@ -872,22 +778,26 @@ function Page2({ data, setData, onNext, onBack }) {
 
       <div className="flex items-center gap-4 mb-8 p-4 bg-white/[0.02] border border-white/5 rounded-lg w-fit">
         <label className="relative inline-flex items-center cursor-pointer group">
-          <input 
-            type="checkbox" 
+          <input
+            type="checkbox"
             className="sr-only peer"
             checked={data.useSetback}
-            onChange={(e) => setData((p) => ({ ...p, useSetback: e.target.checked }))}
+            onChange={(e) =>
+              setData((p) => ({ ...p, useSetback: e.target.checked }))
+            }
           />
           <div className="w-12 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600 shadow-inner"></div>
-          <span className="ml-4 text-[11px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-200 transition-colors">Add Setback / Marginal Distances</span>
+          <span className="ml-4 text-[11px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-200 transition-colors">
+            Add Setback / Marginal Distances
+          </span>
         </label>
       </div>
 
       <AnimatePresence>
         {data.useSetback && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -10, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: 'auto' }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
             exit={{ opacity: 0, y: -10, height: 0 }}
             className="grid grid-cols-1 sm:grid-cols-3 gap-6 p-8 bg-slate-900/60 rounded-lg border border-white/5 mb-10 overflow-hidden"
           >
@@ -930,7 +840,7 @@ function Page2({ data, setData, onNext, onBack }) {
           </motion.div>
         )}
       </AnimatePresence>
-      
+
       {errors.setback && <Banner type="err">{errors.setback}</Banner>}
       <NavBar
         onNext={validate}
@@ -946,7 +856,6 @@ function Page2({ data, setData, onNext, onBack }) {
 function Page3({ data, floorRooms, setFloorRooms, onNext, onBack }) {
   const [activeFloor, setActiveFloor] = useState(0);
   const [error, setError] = useState(false);
-  const floors = Array.from({ length: data.numFloors }, (_, i) => i);
 
   const toggleRoom = (f, roomId) => {
     setFloorRooms((prev) => {
@@ -976,96 +885,31 @@ function Page3({ data, floorRooms, setFloorRooms, onNext, onBack }) {
   };
 
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+    >
       <PageHeader
         step="03"
         title="Rooms — Architecture"
         desc="Switch floor tabs to define rooms for each level. We calculate interior wall volume based on this."
       />
 
-      <div className="flex flex-wrap gap-2 mb-8 p-1.5 bg-slate-50 rounded-lg border border-slate-100 shadow-inner">
-        {floors.map((f) => (
-          <button
-            key={f}
-            className={`flex-1 min-w-[100px] px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
-              activeFloor === f 
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-200" 
-                : "text-slate-400 hover:text-slate-600 hover:bg-white"
-            }`}
-            onClick={() => setActiveFloor(f)}
-          >
-            {FLOOR_NAMES[f] || `Floor ${f}`}
-          </button>
-        ))}
-      </div>
+      {/* Using FloorManager component */}
+      <FloorManager
+        numFloors={data.numFloors}
+        activeFloor={activeFloor}
+        onFloorChange={setActiveFloor}
+      />
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-12">
-        {ROOM_TYPES.map((rt) => {
-          const selected = !!floorRooms[activeFloor]?.[rt.id];
-          return (
-            <button
-              key={rt.id}
-              onClick={() => toggleRoom(activeFloor, rt.id)}
-              className={`flex flex-col items-center gap-2.5 p-4 rounded-lg border transition-all active:scale-[0.97] group relative overflow-hidden ${
-                selected 
-                  ? "bg-indigo-50 border-indigo-200 ring-1 ring-indigo-500/10" 
-                  : "bg-white border-slate-100 hover:bg-slate-50 hover:border-slate-200"
-              }`}
-            >
-              <div className={`text-2xl transition-transform group-hover:scale-110 duration-500 ${selected ? "opacity-100 drop-shadow-[0_0_8px_rgba(79,70,229,0.3)]" : "grayscale opacity-40 group-hover:opacity-100 group-hover:grayscale-0"}`}>
-                {rt.icon}
-              </div>
-              <span className={`text-[10px] font-bold tracking-wider uppercase leading-tight text-center transition-colors ${selected ? "text-indigo-600" : "text-slate-400 group-hover:text-slate-600"}`}>
-                {rt.name}
-              </span>
-              {selected && (
-                <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center shadow-lg animate-in zoom-in-50 duration-300">
-                  <FiCheck className="text-white" size={12} strokeWidth={4} />
-                </div>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      <AnimatePresence>
-        {Object.keys(floorRooms[activeFloor] || {}).length > 0 && (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12"
-          >
-            {Object.entries(floorRooms[activeFloor] || {}).map(
-              ([roomId, cnt]) => {
-                const rt = ROOM_TYPES.find((r) => r.id === roomId);
-                return (
-                  <div key={roomId} className="flex items-center gap-4 p-3 bg-white rounded-lg border border-slate-100 group transition-all hover:border-indigo-500/30 hover:shadow-sm">
-                    <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center text-lg border border-slate-100 shadow-inner">
-                      {rt?.icon}
-                    </div>
-                    <div className="flex-1 text-[11px] font-bold text-slate-700 uppercase tracking-widest">
-                      {rt?.name}
-                    </div>
-                    <div className="flex items-center bg-slate-50 rounded-lg border border-slate-100 p-1 shadow-inner">
-                      <span className="text-[10px] font-bold text-slate-400 px-2 select-none">×</span>
-                      <input
-                        type="number"
-                        min={1}
-                        max={20}
-                        value={cnt}
-                        onChange={(e) =>
-                          updateCount(activeFloor, roomId, +e.target.value)
-                        }
-                        className="w-10 bg-transparent text-center text-sm font-black text-indigo-600 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                );
-              },
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Using RoomSelector component */}
+      <RoomSelector
+        floorRooms={floorRooms}
+        activeFloor={activeFloor}
+        onToggleRoom={toggleRoom}
+        onUpdateCount={updateCount}
+      />
 
       {error && (
         <Banner type="err">
@@ -1073,7 +917,8 @@ function Page3({ data, floorRooms, setFloorRooms, onNext, onBack }) {
         </Banner>
       )}
       <Banner type="info">
-        Need multiple rooms of the same type? Just increase the count field — for example, 3 bedrooms → count = 3
+        Need multiple rooms of the same type? Just increase the count field —
+        for example, 3 bedrooms → count = 3
       </Banner>
       <NavBar
         onNext={validate}
@@ -1107,10 +952,15 @@ function Page4({ data, setData, onNext, onBack }) {
 
   const brickHint = `WB PWD: ₹${BRICK_RATES[data.brickKey][0].toLocaleString("en-IN")}/m³`;
 
-  const inputCls = (err) => `w-full bg-slate-900/40 border ${err ? 'border-rose-500/50 focus:ring-rose-500/20' : 'border-white/10 focus:ring-purple-500/30'} rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:ring-2 focus:bg-slate-900/60 transition-all font-semibold text-sm shadow-inner appearance-none cursor-pointer`;
+  const inputCls = (err) =>
+    `w-full bg-slate-900/40 border ${err ? "border-rose-500/50 focus:ring-rose-500/20" : "border-white/10 focus:ring-purple-500/30"} rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:ring-2 focus:bg-slate-900/60 transition-all font-semibold text-sm shadow-inner appearance-none cursor-pointer`;
 
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+    >
       <PageHeader
         step="04"
         title="Engineering Parameters"
@@ -1140,29 +990,39 @@ function Page4({ data, setData, onNext, onBack }) {
         </FormGroup>
       </div>
 
-      <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-5 px-1">Seismic / Soil Profile</div>
+      <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-5 px-1">
+        Seismic / Soil Profile
+      </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
         {soilOpts.map((o) => (
           <button
             key={o.key}
             onClick={() => setData((p) => ({ ...p, soilType: o.key }))}
             className={`flex flex-col gap-2 p-4 rounded-lg border transition-all text-left group overflow-hidden relative ${
-              data.soilType === o.key 
-                ? "bg-indigo-50 border-indigo-200 ring-1 ring-indigo-500/10 shadow-sm" 
+              data.soilType === o.key
+                ? "bg-indigo-50 border-indigo-200 ring-1 ring-indigo-500/10 shadow-sm"
                 : "bg-white border-slate-100 hover:bg-slate-50"
             }`}
           >
-            <div className={`text-xl transition-transform group-hover:scale-110 duration-500 ${data.soilType === o.key ? "opacity-100" : "opacity-40 group-hover:opacity-100"}`}>
+            <div
+              className={`text-xl transition-transform group-hover:scale-110 duration-500 ${data.soilType === o.key ? "opacity-100" : "opacity-40 group-hover:opacity-100"}`}
+            >
               {o.icon}
             </div>
             <div>
-              <div className={`text-[10px] font-bold tracking-widest uppercase mb-0.5 ${data.soilType === o.key ? "text-indigo-600" : "text-slate-900"}`}>{o.label}</div>
-              <div className="text-[9px] text-slate-500 font-semibold leading-tight uppercase tracking-tight">{o.desc}</div>
+              <div
+                className={`text-[10px] font-bold tracking-widest uppercase mb-0.5 ${data.soilType === o.key ? "text-indigo-600" : "text-slate-900"}`}
+              >
+                {o.label}
+              </div>
+              <div className="text-[9px] text-slate-500 font-semibold leading-tight uppercase tracking-tight">
+                {o.desc}
+              </div>
             </div>
             {data.soilType === o.key && (
-               <div className="absolute top-2.5 right-2.5 w-5 h-5 bg-indigo-600 flex items-center justify-center rounded-full shadow-lg">
-                  <FiCheck size={12} className="text-white" />
-               </div>
+              <div className="absolute top-2.5 right-2.5 w-5 h-5 bg-indigo-600 flex items-center justify-center rounded-full shadow-lg">
+                <FiChevronRight size={12} className="text-white" />
+              </div>
             )}
           </button>
         ))}
@@ -1170,7 +1030,9 @@ function Page4({ data, setData, onNext, onBack }) {
 
       {soilWarn && (
         <Banner type="warn">
-          <strong>Soil Consistency Alert:</strong> The selected SBC value is unusual for this soil type. Please verify with your Soil Investigation Report.
+          <strong>Soil Consistency Alert:</strong> The selected SBC value is
+          unusual for this soil type. Please verify with your Soil Investigation
+          Report.
         </Banner>
       )}
 
@@ -1248,214 +1110,9 @@ function Page4({ data, setData, onNext, onBack }) {
 }
 
 function Page5({ formData, result, onRestart }) {
-  const fmt = (n) => Math.round(n).toLocaleString("en-IN");
-  const fmtD = (n, d = 2) => (+n).toFixed(d);
-  const { boqItems, subTotal, contingency, overhead, gst, grandTotal } = result;
-
+  // Using the extracted CostSummary component
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
-      <div className="flex flex-wrap items-center gap-4 py-6 border-b border-white/5 no-print">
-        <button 
-          className="flex items-center gap-2 px-8 py-4 rounded-lg bg-purple-600 text-white text-[12px] font-black uppercase tracking-widest shadow-xl shadow-purple-500/20 hover:shadow-purple-500/40 hover:-translate-y-1 transition-all active:scale-95"
-          onClick={() => window.print()}
-        >
-          <FiDownload size={18} /> Download BOQ (PDF)
-        </button>
-        <button 
-          className="flex items-center gap-2 px-8 py-4 rounded-lg bg-slate-800/80 text-slate-300 text-[12px] font-black uppercase tracking-widest border border-white/10 hover:bg-slate-700 hover:text-white transition-all active:scale-95 backdrop-blur-md"
-          onClick={onRestart}
-        >
-          <FiRefreshCw size={18} /> New Estimate
-        </button>
-        <div className="ml-auto hidden xl:flex items-center gap-3 px-5 py-3 bg-indigo-500/10 rounded-lg border border-indigo-500/20 leading-none">
-          <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-          <span className="text-[10px] text-indigo-300 font-black uppercase tracking-widest">
-            Print hack: Select "Save as PDF"
-          </span>
-        </div>
-      </div>
-
-      <div className="bg-gradient-to-br from-indigo-600 to-indigo-900 rounded-lg p-8 md:p-10 shadow-xl relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-white/10 blur-[120px] rounded-full -mr-32 -mt-32" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-400/10 blur-[120px] rounded-full -ml-32 -mb-32" />
-        
-        <div className="relative flex flex-col xl:flex-row gap-16 items-start">
-          <div className="flex-1 space-y-10">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full border border-white/20 text-[9px] font-black text-indigo-50 uppercase tracking-[0.2em] mb-4">
-                Certified Engineering Estimate
-              </div>
-              <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-[0.9] mb-3">
-                {formData.projName || "Untitled Project"}
-              </h2>
-              <div className="text-indigo-100/60 text-sm font-bold uppercase tracking-widest flex items-center gap-3">
-                <span>{formData.location || "Earth"}</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-white/20" />
-                <span>{formData.estDate}</span>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-y-10 gap-x-12">
-              {[
-                ["Owner", formData.ownerName],
-                ["Engineer", formData.engName],
-                ["Building Use", formData.bldUse],
-                ["Floors", result.floorStr],
-                ["Concrete", formData.concGrade],
-                ["Steel", formData.steelGrd],
-              ].map(([lbl, val]) => (
-                <div key={lbl} className="space-y-1">
-                  <div className="text-[10px] font-black text-indigo-200/50 uppercase tracking-[0.2em]">{lbl}</div>
-                  <div className="text-sm font-black text-white tracking-tight">{val || 'Not Specified'}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          <div className="w-full xl:w-auto flex flex-col items-center xl:items-end gap-3 bg-white/10 border border-white/10 p-8 rounded-lg backdrop-blur-md shadow-inner group/money transition-transform hover:scale-[1.02] duration-500">
-            <div className="text-[10px] font-black text-indigo-100/50 uppercase tracking-[0.3em] mb-2 px-2">Total Project Value</div>
-            <div className="text-5xl md:text-7xl font-black text-white tracking-tighter tabular-nums py-1 group-hover/money:tracking-normal transition-all duration-700">
-              ₹{(grandTotal / 100000).toFixed(2)}<span className="text-lg md:text-xl ml-2 opacity-50 uppercase">Lacs</span>
-            </div>
-            <div className="flex items-center gap-4 mt-6">
-              <div className="text-[11px] font-black text-indigo-600 bg-white px-4 py-2 rounded-lg shadow-xl">
-                ≈ ₹{Math.round(grandTotal / result.totalBU / 10.764).toLocaleString("en-IN")}/sqft
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <ResultSection icon={<FiBox className="text-purple-400" />} title="Spatial Metrics" sub="Calculated built-up area and structural volume">
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-6">
-          {[
-            ["Built-up Area", result.totalBU.toFixed(1) + " m²", (result.totalBU * 10.764).toFixed(0) + " sqft"],
-            ["Plot Size", result.plotArea.toFixed(1) + " m²", (result.plotArea * 10.764).toFixed(0) + " sqft"],
-            ["Built height", result.totalH.toFixed(2) + " m", "~" + (result.totalH * 3.28).toFixed(1) + " ft"],
-            ["Columns", result.totalCols, "Total grid units"],
-            ["Avg Span", result.spanL.toFixed(2) + " m", "Structural grid"],
-            ["Ground BU", result.builtArea.toFixed(1) + " m²", "Base footprint"],
-          ].map(([lbl, val, sub]) => (
-            <div key={lbl} className="bg-slate-50 p-4 rounded-lg border border-slate-100 hover:border-indigo-500/30 transition-all text-center space-y-1.5">
-               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{lbl}</div>
-               <div className="text-xl font-black text-slate-900 tabular-nums">{val}</div>
-               <div className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{sub}</div>
-            </div>
-          ))}
-        </div>
-      </ResultSection>
-
-      <ResultSection icon={<FiLayers className="text-indigo-400" />} title="Resource Takeoff" sub="Gross material requirements as per IS:10262">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {[
-            ["Concrete (RCC)", result.totalRCC.toFixed(2) + " m³", "Grade " + formData.concGrade],
-            ["Steel Reinforce.", (result.steelKg / 1000).toFixed(2) + " MT", result.steelKg.toFixed(0) + " KG"],
-            ["Cement Bags", Math.ceil(result.totalRCC * 8.5) + " Bags", "OPC 43/53"],
-            ["Fine Aggregate", (result.totalRCC * 0.45).toFixed(1) + " m³", "M-Sand / Sand"],
-            ["Masonry Volume", (result.brickVolExt + result.brickVolInt).toFixed(1) + " m³", formData.brickKey + " Class"],
-            ["Plaster area", (result.plInt + result.plExt).toFixed(0) + " m²", "12mm / 18mm thk"],
-            ["Floor Tiles", result.floorArea.toFixed(0) + " m²", "Net surfaced"],
-            ["Internal Paint", (result.plInt).toFixed(0) + " m²", "Net surfaced"],
-          ].map(([lbl, val, sub], idx) => (
-            <div key={lbl} className="flex items-center gap-4 p-4 bg-slate-50 rounded-lg border border-slate-100">
-                <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center text-lg shadow-sm border border-slate-100">
-                  {idx === 0 ? "🏗️" : idx === 1 ? "🔗" : idx === 2 ? "🧱" : idx === 3 ? "⌛" : idx === 4 ? "🧱" : idx === 5 ? "🎨" : idx === 6 ? "💠" : "🖌️"}
-                </div>
-                <div>
-                   <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{lbl}</div>
-                   <div className="text-base font-black text-slate-900 tabular-nums">{val}</div>
-                   <div className="text-[9px] font-bold text-slate-500 uppercase">{sub}</div>
-                </div>
-            </div>
-          ))}
-        </div>
-      </ResultSection>
-
-      <ResultSection icon={<FiList className="text-emerald-400" />} title="Bill of Quantities" sub="Itemized PWD structural estimates" badge="West Bengal PWD 2024">
-        <div className="overflow-x-auto -mx-6 px-6">
-          <table className="w-full text-left border-collapse min-w-[900px]">
-            <thead>
-              <tr className="bg-slate-900/60 border-y border-white/10">
-                <th className="px-6 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] w-16 text-center">#</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Work Description</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] w-20 text-center">Unit</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] w-32 text-right">Quantity</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] w-32 text-right">Rate (₹)</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] w-40 text-right">Total (₹)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {boqItems.map((item, idx) => {
-                if (item.head) {
-                  return (
-                    <tr key={idx} className="bg-indigo-500/5">
-                      <td colSpan={6} className="px-6 py-4 text-[12px] font-black text-indigo-400 uppercase tracking-widest italic">
-                       {item.sno}. {item.desc}
-                      </td>
-                    </tr>
-                  );
-                }
-                if (+item.qty <= 0) return null;
-                const amt = +item.qty * +item.rate;
-                return (
-                  <tr key={idx} className="hover:bg-white/[0.03] transition-colors group border-white/5">
-                    <td className="px-6 py-4 text-[11px] font-black text-slate-600 text-center">{item.sno}</td>
-                    <td className="px-6 py-4">
-                      <div className="text-xs font-black text-slate-300 group-hover:text-white transition-colors leading-relaxed uppercase pr-8">{item.desc}</div>
-                    </td>
-                    <td className="px-6 py-4 text-[11px] font-black text-slate-500 text-center">{item.unit}</td>
-                    <td className="px-6 py-4 text-xs font-bold text-slate-400 text-right tabular-nums">{fmtD(item.qty)}</td>
-                    <td className="px-6 py-4 text-xs font-bold text-slate-400 text-right tabular-nums">{item.rate.toLocaleString("en-IN")}</td>
-                    <td className="px-6 py-4 text-sm font-black text-slate-100 text-right tabular-nums">₹{fmt(amt)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-            <tfoot className="bg-slate-50 border-t border-slate-200">
-              {[
-                ["Sub Total (Base Construction Value)", subTotal],
-                ["Contingency @ 3%", contingency],
-                ["Contractor Profit & OH @ 12%", overhead],
-                ["GST @ 12%", gst],
-              ].map(([lbl, val], idx) => (
-                <tr key={lbl}>
-                  <td colSpan={5} className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{lbl}</td>
-                  <td className="px-6 py-4 text-right text-sm font-black text-slate-600 tabular-nums">₹{fmt(val)}</td>
-                </tr>
-              ))}
-              <tr className="bg-indigo-600 shadow-2xl">
-                <td colSpan={5} className="px-6 py-8 text-right text-xs font-black text-indigo-100 uppercase tracking-[0.3em]">Net Project Estimate (Round Off)</td>
-                <td className="px-6 py-8 text-right text-3xl font-black text-white tabular-nums">
-                  ₹{(Math.round(grandTotal / 10000) * 10000).toLocaleString("en-IN")}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-
-        <div className="mt-12 p-10 bg-slate-950/60 rounded-lg border border-white/5 border-dashed space-y-6">
-          <div className="flex items-center gap-3">
-             <FiAlertCircle className="text-purple-400" size={20} />
-             <div className="text-[12px] font-black text-slate-300 uppercase tracking-[0.3em]">Engineer's Notes</div>
-          </div>
-          <div className="grid md:grid-cols-2 gap-x-12 gap-y-4">
-             {[
-               "Rates based on WB PWD SOR 2024 (Building Works).",
-               `SBC adjusted for ${formData.soilType} soil at ${formData.sbc} kN/m².`,
-               "Structural analysis follows IS:456 and IS:875 standards.",
-               "Estimate excludes statutory fees, land cost and landscaping.",
-               "Labour costs include safety overheads and insurance markers.",
-               "Quantities are net — add 5-8% for site wastage on RCC."
-             ].map((txt, i) => (
-                <div key={i} className="flex gap-4 items-start">
-                   <span className="text-purple-500 font-black text-[10px] mt-0.5">{i+1}.</span>
-                   <p className="text-[10px] text-slate-500 font-bold uppercase leading-relaxed tracking-tight">{txt}</p>
-                </div>
-             ))}
-          </div>
-        </div>
-      </ResultSection>
-    </motion.div>
+    <CostSummary formData={formData} result={result} onRestart={onRestart} />
   );
 }
 
@@ -1465,12 +1122,10 @@ function LoadingOverlay({ show }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
       <div className="bg-white border border-slate-100 p-12 rounded-lg shadow-2xl flex flex-col items-center gap-8 max-w-sm text-center animate-in fade-in zoom-in duration-500 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent" />
-        <div className="relative">
-          <div className="absolute inset-0 bg-indigo-500 blur-3xl opacity-20 animate-pulse" />
-          <FiRefreshCw className="text-7xl text-indigo-600 animate-spin relative z-10 duration-1000" />
-        </div>
         <div className="relative z-10 space-y-4">
-          <h3 className="text-3xl font-extrabold text-slate-900 tracking-tighter">Analyzing…</h3>
+          <h3 className="text-3xl font-extrabold text-slate-900 tracking-tighter">
+            Analyzing…
+          </h3>
           <div className="space-y-1.5">
             <p className="text-[10px] text-indigo-600 font-black uppercase tracking-[0.3em] leading-relaxed">
               Synthesizing IS:456 parameters
@@ -1481,12 +1136,12 @@ function LoadingOverlay({ show }) {
           </div>
         </div>
         <div className="w-48 h-1 bg-slate-100 rounded-full overflow-hidden relative z-10">
-           <motion.div 
-             initial={{ x: "-100%" }}
-             animate={{ x: "100%" }}
-             transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-             className="w-1/2 h-full bg-gradient-to-r from-transparent via-indigo-600 to-transparent"
-           />
+          <motion.div
+            initial={{ x: "-100%" }}
+            animate={{ x: "100%" }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+            className="w-1/2 h-full bg-gradient-to-r from-transparent via-indigo-600 to-transparent"
+          />
         </div>
       </div>
     </div>
@@ -1527,8 +1182,7 @@ export default function BOQPage() {
     brickKey: "1st",
   });
 
-  const initRooms = {};
-  for (let i = 0; i < formData.numFloors; i++) initRooms[i] = {};
+  const initRooms = initializeFloorRooms(formData.numFloors);
   const [floorRooms, setFloorRooms] = useState(initRooms);
 
   const goTo = (n) => {
@@ -1537,16 +1191,17 @@ export default function BOQPage() {
   };
 
   const handleSaveToCloud = async (pName) => {
-    const { saveProjectToFirestore } = await import('@/services/projectService');
+    const { saveProjectToFirestore } =
+      await import("@/services/projectService");
     const projectData = {
       formData: { ...formData, projName: pName },
       floorRooms,
-      result
+      result,
     };
     await saveProjectToFirestore("local-user", {
-      tool: 'boq',
+      tool: "boq",
       projectName: pName,
-      projectData
+      projectData,
     });
   };
 
@@ -1564,8 +1219,7 @@ export default function BOQPage() {
   const handleRestart = () => {
     setStep(1);
     setResult(null);
-    const rooms = {};
-    for (let i = 0; i < formData.numFloors; i++) rooms[i] = {};
+    const rooms = initializeFloorRooms(formData.numFloors);
     setFloorRooms(rooms);
     scrollTop();
   };
@@ -1574,8 +1228,7 @@ export default function BOQPage() {
     setFormData((prev) => {
       const next = typeof updater === "function" ? updater(prev) : updater;
       if (next.numFloors !== prev.numFloors) {
-        const rooms = {};
-        for (let i = 0; i < next.numFloors; i++) rooms[i] = {};
+        const rooms = initializeFloorRooms(next.numFloors);
         setFloorRooms(rooms);
       }
       return next;
@@ -1585,72 +1238,32 @@ export default function BOQPage() {
   return (
     <ToolLayout
       title="CivilHub — Smart BOQ"
-      subtitle={formData.projName ? `PROJ: ${formData.projName}` : "AI-Powered structural estimation"}
+      subtitle={
+        formData.projName
+          ? `PROJ: ${formData.projName}`
+          : "AI-Powered structural estimation"
+      }
       onSave={handleSaveToCloud}
     >
       <div className="flex flex-col lg:flex-row gap-12 items-start relative pb-32">
         {/* ── SIDEBAR ── */}
-        <aside className="w-full lg:w-80 lg:sticky lg:top-8 flex flex-col gap-8 no-print">
-          <div className="bg-white border border-slate-100 rounded-lg p-8 shadow-sm relative overflow-hidden group">
-             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-             
-             <div className="flex items-center gap-4 mb-10 px-2 relative z-10">
-                <div className="w-12 h-12 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-xl shadow-indigo-100">
-                  <FiBox size={24} />
-                </div>
-                <div>
-                   <h2 className="text-lg font-extrabold text-slate-900 leading-none tracking-tighter">BOQ Engine</h2>
-                   <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mt-1.5">v2.4 — PWD 2024</p>
-                </div>
-             </div>
-
-             <nav className="flex flex-col gap-3 relative z-10">
-              {[
-                { num: 1, label: "Project Brief" },
-                { num: 2, label: "Geometry & Extent" },
-                { num: 3, label: "Floor Architecture" },
-                { num: 4, label: "Structural Profile" },
-                { num: 5, label: "Official Estimate" },
-              ].map((s) => (
-                <button
-                  key={s.num}
-                  className={`flex items-center gap-5 p-4 rounded-lg transition-all text-left group relative ${
-                    step === s.num 
-                      ? "bg-indigo-50 border-indigo-100 shadow-sm" 
-                      : "border border-transparent hover:bg-slate-50"
-                  }`}
-                  disabled={s.num > step && step !== 5}
-                >
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-[11px] font-black transition-all ${
-                    step === s.num 
-                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100 scale-110" 
-                      : step > s.num 
-                        ? "bg-slate-900 text-indigo-400 border border-indigo-500/20 ring-4 ring-indigo-500/5" 
-                        : "bg-slate-50 text-slate-400 border border-slate-100"
-                  }`}>
-                    {step > s.num ? <FiCheck strokeWidth={4} /> : `0${s.num}`}
-                  </div>
-                  <div className={`text-[11px] font-black uppercase tracking-widest transition-colors ${
-                    step === s.num ? "text-slate-900" : "text-slate-400 group-hover:text-slate-600"
-                  }`}>
-                    {s.label}
-                  </div>
-                  {step === s.num && (
-                    <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse" />
-                  )}
-                </button>
-              ))}
-            </nav>
-          </div>
+        <aside className="w-full lg:w-56 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto flex flex-col gap-8 no-print">
+          {/* Using extracted StepIndicator component */}
+          <StepIndicator currentStep={step} />
 
           <div className="bg-slate-50 border border-slate-100 rounded-lg p-8 group">
-             <div className="flex items-center gap-3 mb-4 text-indigo-600">
-                <FiInfo className="group-hover:rotate-12 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Quick Insight</span>
-             </div>
-             <p className="text-[11px] font-bold text-slate-500 leading-relaxed uppercase tracking-tight">
-                Our algorithm calculates the <span className="text-slate-700">Effective Span</span> and <span className="text-slate-700">Net Moment Resistance</span> to provide precise material quantities.
-             </p>
+            <div className="flex items-center gap-3 mb-4 text-indigo-600">
+              <FiInfo className="group-hover:rotate-12 transition-transform" />
+              <span className="text-[10px] font-black uppercase tracking-[0.3em]">
+                Quick Insight
+              </span>
+            </div>
+            <p className="text-[11px] font-bold text-slate-500 leading-relaxed uppercase tracking-tight">
+              Our algorithm calculates the{" "}
+              <span className="text-slate-700">Effective Span</span> and{" "}
+              <span className="text-slate-700">Net Moment Resistance</span> to
+              provide precise material quantities.
+            </p>
           </div>
         </aside>
 
@@ -1659,47 +1272,47 @@ export default function BOQPage() {
           <LoadingOverlay show={loading} />
 
           <AnimatePresence mode="wait">
-             <div className="max-w-[1000px] mx-auto min-h-[600px]">
-                {step === 1 && (
-                  <Page1
-                    data={formData}
-                    setData={setFormData}
-                    onNext={() => goTo(2)}
-                  />
-                )}
-                {step === 2 && (
-                  <Page2
-                    data={formData}
-                    setData={setDataAndFloors}
-                    onNext={() => goTo(3)}
-                    onBack={() => goTo(1)}
-                  />
-                )}
-                {step === 3 && (
-                  <Page3
-                    data={formData}
-                    floorRooms={floorRooms}
-                    setFloorRooms={setFloorRooms}
-                    onNext={() => goTo(4)}
-                    onBack={() => goTo(2)}
-                  />
-                )}
-                {step === 4 && (
-                  <Page4
-                    data={formData}
-                    setData={setFormData}
-                    onNext={handleGenerate}
-                    onBack={() => goTo(3)}
-                  />
-                )}
-                {step === 5 && result && (
-                  <Page5
-                    formData={formData}
-                    result={result}
-                    onRestart={handleRestart}
-                  />
-                )}
-             </div>
+            <div className="max-w-[1000px] mx-auto min-h-[600px]">
+              {step === 1 && (
+                <Page1
+                  data={formData}
+                  setData={setFormData}
+                  onNext={() => goTo(2)}
+                />
+              )}
+              {step === 2 && (
+                <Page2
+                  data={formData}
+                  setData={setDataAndFloors}
+                  onNext={() => goTo(3)}
+                  onBack={() => goTo(1)}
+                />
+              )}
+              {step === 3 && (
+                <Page3
+                  data={formData}
+                  floorRooms={floorRooms}
+                  setFloorRooms={setFloorRooms}
+                  onNext={() => goTo(4)}
+                  onBack={() => goTo(2)}
+                />
+              )}
+              {step === 4 && (
+                <Page4
+                  data={formData}
+                  setData={setFormData}
+                  onNext={handleGenerate}
+                  onBack={() => goTo(3)}
+                />
+              )}
+              {step === 5 && result && (
+                <Page5
+                  formData={formData}
+                  result={result}
+                  onRestart={handleRestart}
+                />
+              )}
+            </div>
           </AnimatePresence>
         </main>
       </div>

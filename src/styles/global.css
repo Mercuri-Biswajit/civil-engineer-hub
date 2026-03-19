@@ -1,3 +1,4 @@
+/* This file uses Tailwind CSS @apply directive which is valid but not recognized by VSCode's built-in CSS linter */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 /* ─── Tailwind Base Directives ──────────────────────────────────────────────── */
@@ -12,28 +13,30 @@
   --primary-light: #f5f3ff;
   --secondary: #db2777;
   --secondary-hover: #be185d;
-  --bg-main: #fdfdff;
+  --bg-main: #f8fafc;
   --bg-surface: #ffffff;
   --bg-card: #ffffff;
   --text-main: #0f172a;
   --text-muted: #64748b;
   --text-inverse: #ffffff;
-  --border-light: #f1f5f9;
+  --border-light: #e2e8f0;
   --glass-border: rgba(255, 255, 255, 0.7);
-  --glass-shadow: 0 10px 40px -10px rgba(31, 38, 135, 0.04), 0 0 1px rgba(0,0,0,0.02);
-  --radius-lg: 24px;
-  --radius-md: 16px;
-  --radius-sm: 12px;
-  --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --glass-shadow: 0 10px 40px -10px rgba(31, 38, 135, 0.04), 0 0 1px rgba(0, 0, 0, 0.02);
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --transition: all 0.2s ease;
   --sidebar-width: 270px;
   --ink: #0f172a;
   --ink-faint: #94a3b8;
-  --luxury-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.05), 0 0 1px 0 rgba(0,0,0,0.08);
 }
 
 /* ─── Base Reset ─────────────────────────────────────────────────────────────── */
 @layer base {
-  *, *::before, *::after {
+
+  *,
+  *::before,
+  *::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -48,32 +51,83 @@
 
   body {
     font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
-    background-color: #ffffff;
+    background-color: var(--bg-main);
     color: var(--text-main);
     line-height: 1.6;
     min-height: 100vh;
   }
 
-  h1, h2, h3, h4 {
-    font-weight: 800;
-    letter-spacing: -0.03em;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 700;
+    letter-spacing: -0.02em;
     color: #0f172a;
+    line-height: 1.3;
   }
 
-  ::-webkit-scrollbar { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-  ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
-  ::selection { background: rgba(79, 70, 229, 0.1); color: #4338ca; }
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  /* Selection */
+  ::selection {
+    background: rgba(79, 70, 229, 0.15);
+    color: #4338ca;
+  }
 }
 
 /* ─── Component Layer ────────────────────────────────────────────────────────── */
 @layer components {
+
+  /* Focus styles */
+  .focus-ring {
+    @apply outline-none ring-2 ring-indigo-500 ring-offset-2;
+  }
+
+  /* Card base */
+  .card {
+    @apply bg-white rounded-2xl border border-slate-200 shadow-sm;
+    @apply transition-all duration-300;
+  }
+
+  .card-hover {
+    @apply hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5;
+  }
+
+  /* Input focus */
+  .input-focus {
+    @apply focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20;
+  }
+
   /* Glass Card */
   .glass-card {
     background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 1rem;
     box-shadow: var(--glass-shadow);
@@ -81,7 +135,11 @@
 
   /* Animations */
   .fade-in {
-    animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: fadeIn 0.4s ease-out forwards;
+  }
+
+  .slide-up {
+    animation: slideUp 0.4s ease-out forwards;
   }
 
   /* Tool Layout Utilities */
@@ -90,74 +148,127 @@
     min-height: 100vh;
   }
 
-  .btn-save-cloud {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background-color: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.75rem;
-    font-size: 0.875rem;
-    font-weight: 700;
-    color: #334155;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  
-  .btn-save-cloud:hover {
-    background-color: #f8fafc;
-    border-color: #6366f1;
-    color: #4f46e5;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.12);
-  }
-
-  .tool-loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 24rem;
-    font-weight: 700;
-    color: #64748b;
-    gap: 1rem;
-  }
-
   /* Premium Loader */
   .premium-loader {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 2rem;
+    height: 2rem;
     border-radius: 9999px;
-    border-width: 4px;
+    border-width: 3px;
     border-color: #eef2ff;
     border-top-color: #6366f1;
-    animation: spin 1s linear infinite;
+    animation: spin 0.8s linear infinite;
+  }
+
+  /* Container */
+  .container-main {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Section spacing */
+  .section {
+    @apply py-8 md:py-12;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold;
+  }
+
+  .badge-primary {
+    @apply bg-indigo-100 text-indigo-700;
+  }
+
+  .badge-success {
+    @apply bg-emerald-100 text-emerald-700;
+  }
+
+  .badge-warning {
+    @apply bg-amber-100 text-amber-700;
+  }
+
+  .badge-danger {
+    @apply bg-red-100 text-red-700;
   }
 }
 
 /* ─── Keyframes ──────────────────────────────────────────────────────────────── */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideUpModal {
-  from { opacity: 0; transform: translateY(20px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes dropdownIn {
-  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
-@keyframes fadeInOverlay {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
+}
+
+/* ─── Utilities ──────────────────────────────────────────────────────────────── */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-delay-100 {
+    animation-delay: 100ms;
+  }
+
+  .animate-delay-200 {
+    animation-delay: 200ms;
+  }
+
+  .animate-delay-300 {
+    animation-delay: 300ms;
+  }
 }
